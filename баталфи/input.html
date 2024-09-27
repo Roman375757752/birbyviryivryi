@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ввод данных о слотах</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c2c54;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .input-area {
+            background-color: #3e3e78;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            width: 300px;
+            text-align: center;
+        }
+
+        .input-area input,
+        .input-area button {
+            font-size: 14px;
+            padding: 10px;
+            margin: 5px;
+            width: 100%;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+        }
+
+        .input-area button {
+            background-color: #ff9f1a;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="input-area">
+        <h2>Добавить слот</h2>
+        <input type="text" id="slot-name" placeholder="Название слота" required>
+        <input type="number" id="bonus-amount" placeholder="Стоимость бонуса (₽)" required>
+        <button onclick="addSlot()">Добавить слот</button>
+    </div>
+
+    <script>
+        function addSlot() {
+            const slotName = document.getElementById('slot-name').value.trim();
+            const bonusAmount = parseInt(document.getElementById('bonus-amount').value);
+
+            if (!slotName || isNaN(bonusAmount)) {
+                alert("Введите корректные данные для слота.");
+                return;
+            }
+
+            const newSlot = {
+                name: slotName,
+                bonus: bonusAmount
+            };
+
+            // Сохраняем данные в localStorage
+            const slots = JSON.parse(localStorage.getItem('slots')) || [];
+            slots.push(newSlot);
+            localStorage.setItem('slots', JSON.stringify(slots));
+
+            // Очищаем поля ввода
+            document.getElementById('slot-name').value = '';
+            document.getElementById('bonus-amount').value = '';
+
+            alert("Слот добавлен! Вы можете просмотреть его на странице BonusBuy.");
+        }
+    </script>
+</body>
+</html>

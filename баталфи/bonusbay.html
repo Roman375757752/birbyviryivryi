@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BonusBuy Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c2c54;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .input-block {
+            background-color: #3e3e78;
+            border-radius: 10px;
+            padding: 20px;
+            width: 50%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            margin-right: 10px;
+        }
+
+        .output-block {
+            background-color: #4c4c94;
+            border-radius: 10px;
+            padding: 20px;
+            width: 50%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header span {
+            font-size: 14px;
+            display: block;
+            color: #ccc;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .table {
+            margin-top: 15px;
+        }
+
+        .table .row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .input-area {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .input-area input,
+        .input-area button,
+        .input-area select {
+            font-size: 14px;
+            padding: 5px;
+            margin: 5px;
+            width: 100%;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+        }
+
+        .input-area button {
+            background-color: #ff9f1a;
+            color: white;
+            cursor: pointer;
+        }
+
+        .crowned {
+            font-weight: bold;
+            color: gold;
+        }
+
+        .info-line {
+            height: 5px; /* Высота линии */
+            background-color: pink; /* Цвет линии */
+            margin: 20px 0; /* Отступы сверху и снизу */
+        }
+
+        .info-text {
+            text-align: center; /* Центрируем текст */
+            font-size: 16px; /* Размер шрифта */
+            color: white; /* Цвет текста */
+            animation: fadeInOut 10s infinite; /* Анимация плавного изменения */
+        }
+
+        @keyframes fadeInOut {
+            0%, 20% {
+                opacity: 0;
+            }
+            25%, 75% {
+                opacity: 1;
+            }
+            80%, 100% {
+                opacity: 0;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-block">
+            <h2>Введите данные</h2>
+            <input type="number" id="user-balance" placeholder="Ваш баланс (₨)">
+            <input type="number" id="dod-deposit" placeholder="Додеп (₨)">
+            <input type="number" id="exchange-rate" placeholder="Курс рупия к рублю">
+            <button onclick="submitData()">Подтвердить</button>
+
+            <h3>Добавить слот</h3>
+            <div class="input-area">
+                <input type="text" id="slot-name" placeholder="Название слота">
+                <input type="number" id="bet-amount" placeholder="Стоимость бонуса (₨)">
+                <button onclick="addSlot()">Добавить слот</button>
+            </div>
+
+            <h3>Выдача бонусов</h3>
+            <div class="input-area">
+                <select id="slot-selector" onchange="copySlotName()">
+                    <option value="">Выберите слот</option>
+                </select>
+                <input type="number" id="win-amount" placeholder="Выдача бонуса (₨)">
+                <button onclick="setWinAmount()">Установить выдачу</button>
+            </div>
+        </div>
+
+        <div class="output-block">
+            <div class="header">
+                BONUSBUY
+                <span>kick.com/batallfi</span>
+            </div>
+
+            <div class="stats">
+                <div id="balance">₨ 0 (0 ₽)</div>
+                <div id="balance-multiplier">🔔 0.00X</div>
+                <div id="avg-multiplier">❌ 0.00X</div>
+                <div id="bonus-count">⭐ 0/0</div>
+            </div>
+
+            <div class="table">
+                <div class="row crowned" id="crowned-list">
+                    <b>👑 Коронный слот:</b> <span id="crowned-slot">Ещё нет данных</span>
+                </div>
+            </div>
+
+            <div class="table" id="main-table">
+                <h3>Список бонусов:</h3>
+            </div>
+
+            <div class="info-line"></div>
+            <div class="info-text">
+                <p id="dynamic-text"></p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let slots = [];
+        let openedBonuses = 0; // Счетчик открытых бонусов
+        let totalBonuses = 0; // Счетчик добавленных бонусов
+        let totalWinAmount = 0; // Общая сумма выигрышей
+        let currentSlotIndex = -1;
+    
+        function submitData() {
+            let balance = parseFloat(document.getElementById('user-balance').value);
+            const dodDeposit = parseFloat(document.getElementById('dod-deposit').value);
+            const exchangeRate = parseFloat(document.getElementById('exchange-rate').value);
+    
+            if (!isNaN(dodDeposit)) {
+                balance += dodDeposit;
+            }
+    
+            if (!isNaN(balance)) {
+                localStorage.setItem('balance', balance);
+            }
+            if (!isNaN(exchangeRate)) {
+                localStorage.setItem('exchangeRate', exchangeRate);
+            }
+    
+            updateBalance();
+            updateBonusCount();
+        }
+    
+        function addSlot() {
+            const slotName = document.getElementById('slot-name').value.trim();
+            const betAmount = parseFloat(document.getElementById('bet-amount').value);
+    
+            if (!slotName || isNaN(betAmount)) {
+                alert("Введите корректные данные для слота.");
+                return;
+            }
+    
+            const newSlot = {
+                name: slotName,
+                bet: betAmount,
+                win: 0
+            };
+    
+            slots.push(newSlot);
+    
+            const newRow = document.createElement('div');
+            newRow.className = 'row';
+            newRow.innerText = `${slotName} (${betAmount.toLocaleString('id-ID')}₨ / ${convertToRub(betAmount)} ₽) ➜ ожидание выдачи...`;
+            document.getElementById('main-table').appendChild(newRow);
+    
+            updateSlotSelector();
+    
+            currentSlotIndex++;
+            document.getElementById('slot-name').value = '';
+            document.getElementById('bet-amount').value = '';
+    
+            // Увеличиваем количество бонусов
+            totalBonuses++;
+            updateBonusCount();
+        }
+    
+        function updateSlotSelector() {
+            const slotSelector = document.getElementById('slot-selector');
+            slotSelector.innerHTML = '<option value="">Выберите слот</option>';
+            slots.forEach((slot, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${slot.name} (${slot.bet.toLocaleString('id-ID')}₨ / ${convertToRub(slot.bet)} ₽)`;
+                slotSelector.appendChild(option);
+            });
+        }
+    
+        function setWinAmount() {
+            const selectedIndex = document.getElementById('slot-selector').value;
+            const winAmount = parseFloat(document.getElementById('win-amount').value);
+    
+            if (selectedIndex === "") {
+                alert("Пожалуйста, выберите слот.");
+                return;
+            }
+    
+            // Проверка на редактирование выигрыша, если выигрыш уже введен
+            if (slots[selectedIndex].win > 0) {
+                // Если это корректировка выигрыша, вычитаем старое значение из общей суммы выигрышей
+                totalWinAmount -= slots[selectedIndex].win;
+            } else {
+                // Если это новый выигрыш, увеличиваем количество открытых бонусов
+                openedBonuses++;
+            }
+    
+            // Устанавливаем новый выигрыш
+            slots[selectedIndex].win = winAmount;
+            totalWinAmount += winAmount;
+    
+            // Обновляем отображение бонуса в списке
+            const rows = document.querySelectorAll('#main-table .row');
+            rows[selectedIndex].innerText = `${slots[selectedIndex].name} (${slots[selectedIndex].bet.toLocaleString('id-ID')}₨ / ${convertToRub(slots[selectedIndex].bet)} ₽) ➜ ${winAmount.toLocaleString('id-ID')}₨ / ${convertToRub(winAmount)} ₽`;
+    
+            document.getElementById('win-amount').value = '';
+            currentSlotIndex++;
+    
+            updateBonusCount();
+            updateCrownedSlot();
+            updateAvgMultiplier(); // Обновляем средний X бонусов
+            updateBalanceMultiplier(); // Обновляем отношение выигрышей к балансу
+        }
+    
+        function copySlotName() {
+            const selectedIndex = document.getElementById('slot-selector').value;
+            if (selectedIndex !== "") {
+                const slotName = slots[selectedIndex].name;
+                navigator.clipboard.writeText(slotName);
+            }
+        }
+    
+        function updateCrownedSlot() {
+            if (slots.length === 0) return;
+    
+            let maxSlot = slots[0];
+            for (let i = 1; i < slots.length; i++) {
+                if (slots[i].win > maxSlot.win) {
+                    maxSlot = slots[i];
+                }
+            }
+    
+            const crownedSlotText = `${maxSlot.name} (${maxSlot.bet.toLocaleString('id-ID')}₨ / ${convertToRub(maxSlot.bet)} ₽) ➜ ${maxSlot.win.toLocaleString('id-ID')}₨ / ${convertToRub(maxSlot.win)} ₽`;
+            document.getElementById('crowned-slot').innerText = crownedSlotText;
+        }
+    
+        function updateBalance() {
+            const balance = parseFloat(localStorage.getItem('balance')) || 0;
+            const exchangeRate = parseFloat(localStorage.getItem('exchangeRate')) || 0;
+    
+            if (!isNaN(balance) && !isNaN(exchangeRate)) {
+                document.getElementById('balance').innerText = `₨ ${balance.toLocaleString('id-ID')} (${convertToRub(balance)} ₽)`;
+            }
+        }
+    
+        function updateBonusCount() {
+            document.getElementById('bonus-count').innerText = `⭐ ${openedBonuses} / ${totalBonuses}`;
+        }
+    
+        function updateAvgMultiplier() {
+            if (openedBonuses === 0) return;
+    
+            let totalMultiplier = 0;
+            slots.forEach(slot => {
+                if (slot.win > 0) {
+                    totalMultiplier += slot.win / slot.bet; // Рассчитываем X для каждого бонуса
+                }
+            });
+            const avgMultiplier = totalMultiplier / openedBonuses;
+            document.getElementById('avg-multiplier').innerText = `❌ ${avgMultiplier.toFixed(2)}X`;
+        }
+    
+        function updateBalanceMultiplier() {
+            const balance = parseFloat(localStorage.getItem('balance')) || 1; // Защита от деления на 0
+            const balanceMultiplier = totalWinAmount / balance;
+            document.getElementById('balance-multiplier').innerText = `🔔 ${balanceMultiplier.toFixed(2)}X`;
+        }
+    
+        function convertToRub(amount) {
+            const exchangeRate = parseFloat(localStorage.getItem('exchangeRate')) || 1;
+            return (amount * exchangeRate).toLocaleString('ru-RU');
+        }
+
+        const texts = [
+    "❌ - avg X открытых бонусов",
+    "🔔 - отношение выигрышей к балансу ",
+    "⭐ - кол-во открытых / купленных бонусов"
+        ];
+
+        let currentIndex = 0;
+
+        function changeText() {
+            currentIndex = (currentIndex + 1) % texts.length; // Циклический переход по текстам
+            document.getElementById('dynamic-text').innerText = texts[currentIndex];
+        }
+
+        // Изменение текста каждые 10 секунд
+        setInterval(changeText, 10000);
+
+    </script>
+    
+</body>
+</html>
